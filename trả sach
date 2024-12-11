@@ -1,0 +1,25 @@
+<?php
+session_start();
+include "connection.php"; // Kết nối cơ sở dữ liệu
+// Xử lý trả sách
+if (isset($_GET['return_id'])) {
+    $return_id = $_GET['return_id'];
+
+    // Lấy thông tin sách cần trả
+    $query = "SELECT book_id FROM borrowed_books WHERE id = '$return_id'";
+    $result = mysqli_query($link, $query);
+    if ($row = mysqli_fetch_assoc($result)) {
+        $book_id = $row['book_id'];
+
+        // Cập nhật trạng thái sách và xóa khỏi danh sách mượn
+        $update_query = "UPDATE books SET status = 'available' WHERE book_id = '$book_id'";
+        mysqli_query($link, $update_query);
+
+        $delete_query = "DELETE FROM borrowed_books WHERE id = '$return_id'";
+        mysqli_query($link, $delete_query);
+
+        echo "<script>alert('Trả sách thành công!'); window.location = 'return_book.php';</script>";
+    } else {
+        echo "<script>alert('Không tìm thấy sách để trả!');</script>";
+    }
+}
