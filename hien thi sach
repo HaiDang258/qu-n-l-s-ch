@@ -1,0 +1,85 @@
+<?php
+session_start();
+include "connection.php"; // Tập tin kết nối cơ sở dữ liệu
+
+if (!isset($_SESSION["admin_name"])) {
+    ?>
+    <script type="text/javascript">
+        window.location = "/login system admin/login_form.php";
+    </script>
+    <?php
+}
+
+// Lấy giá trị tìm kiếm từ form
+$search_query = isset($_GET['search_query']) ? $_GET['search_query'] : '';
+$search_column = isset($_GET['search_column']) ? $_GET['search_column'] : '';
+
+// Truy vấn cơ sở dữ liệu
+$query = "SELECT * FROM borrowed_books";
+if ($search_query && $search_column) {
+    $query .= " WHERE $search_column LIKE '%$search_query%'";
+}
+$query .= " ORDER BY borrow_date DESC";
+
+$result = mysqli_query($link, $query);
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trả Sách</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Danh Sách Sách Đang Được Mượn</h2>
+        <form class="form-inline my-4" method="get" action="">
+            <select class="form-control mr-2" name="search_column">
+                <option value="student_id" <?= $search_column === 'student_id' ? 'selected' : '' ?>>Mã Sinh Viên</option>
+                <option value="book_id" <?= $search_column === 'book_id' ? 'selected' : '' ?>>Mã Sách</option>
+                <option value="borrow_date" <?= $search_column === 'borrow_date' ? 'selected' : '' ?>>Ngày Mượn</option>
+                <option value="borrow_time" <?= $search_column === 'borrow_time' ? 'selected' : '' ?>>Giờ Mượn</option>
+            </select>
+            <input type="text" class="form-control mr-2" name="search_query" placeholder="Tìm kiếm..." value="<?= htmlspecialchars($search_query) ?>">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        </form>
+
+        <?php if (mysqli_num_rows($result) > 0): ?>
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Mã Sinh Viên</th>
+                        <th>Mã Sách</th>
+                        <th>Tên Sách</th>
+                        <th>Ngày Mượn</th>
+                        <th>Giờ Mượn</th>
+                        <th>Trả Sách</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['student_id']) ?></td>
+                            <td><?= htmlspecialchars($row['book_id']) ?></td>
+                            <td><?= htmlspecialchars($row['book_name']) ?></td>
+                            <td><?= htmlspecialchars($row['borrow_date']) ?></td>
+                            <td><?= htmlspecialchars($row['borrow_time']) ?></td>
+                            <td>
+                                <a href="return_book.php?id=<?= $row['id'] ?>" class="btn btn-success">Trả Sách</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div class="alert alert-warning text-center">Không tìm thấy dữ liệu.</div>
+        <?php endif; ?>
+    </div>
+</body>
+
+</html>
