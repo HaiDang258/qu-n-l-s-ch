@@ -1,0 +1,89 @@
+<?php
+session_start();
+include "connection.php"; // Kết nối tới cơ sở dữ liệu
+
+// Lấy danh sách sách có sẵn
+$query = "SELECT * FROM books WHERE status = 'available'";
+$result = mysqli_query($link, $query);
+
+// Xử lý yêu cầu mượn sách
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $book_id = $_POST['book_id'];
+    $student_id = $_POST['student_id'];
+    $borrow_date = date('Y-m-d');
+
+    // Kiểm tra trạng thái sách
+    $book_check_query = "SELECT * FROM books WHERE book_id = '$book_id' AND status = 'available'";
+    $book_check_result = mysqli_query($link, $book_check_query);
+
+    if (mysqli_num_rows($book_check_result) > 0) {
+        // Thêm thông tin mượn vào bảng borrowed_books
+        $insert_query = "INSERT INTO borrowed_books (book_id, student_id, borrow_date) 
+                         VALUES ('$book_id', '$student_id', '$borrow_date')";
+        mysqli_query($link, $insert_query);
+
+        // Cập nhật trạng thái sách
+        $update_query = "UPDATE books SET status = 'borrowed' WHERE book_id = '$book_id'";
+        mysqli_query($link, $update_query);
+
+        echo "<script>alert('Mượn sách thành công!'); window.location.href='borrow_books.php';</script>";
+    } else {
+        echo "<script>alert('Sách không còn sẵn sàng để mượn!');</script>";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mượn Sách</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">Danh Sách Sách Có Sẵn</h2>
+
+    <!-- Hiển thị danh sách sách có sẵn -->
+    <?php if (mysqli_num_rows($result) > 0): ?>
+        <table class="table table-bordered mt-3">
+            <thead class="thead-dark">
+            <tr>
+                <th>Mã Sách</th>
+                <th>Tên Sách</th>
+                <th>Tác Giả</th>
+                <th>Trạng Thái</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                <tr>
+                    <td><?= htmlspecialchars($row['book_id']) ?></td>
+                    <td><?= htmlspecialchars($row['book_name']) ?></td>
+                    <td><?= htmlspecialchars($row['author']) ?></td>
+                    <td><?= htmlspecialchars($row['status']) ?></td>
+                </tr>
+            <?php endwhile; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <div class="alert alert-warning text-center">Không có sách nào sẵn sàng để mượn.</div>
+    <?php endif; ?>
+
+    <!-- Form mượn sách -->
+    <h2 class="text-center mt-5">Mượn Sách</h2>
+    <form method="post" class="mt-3">
+        <div class="form-group">
+            <label for="book_id">Mã Sách</label>
+            <input type="text" class="form-control" id="book_id" name="book_id" placeholder="Nhập mã sách" required>
+        </div>
+        <div class="form-group">
+            <label for="student_id">Mã Sinh Viên</label>
+            <input type="text" class="form-control" id="student_id" name="student_id" placeholder="Nhập mã sinh viên" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Mượn Sách</button>
+    </form>
+</div>
+</body>
+</html>
